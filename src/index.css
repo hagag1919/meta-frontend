@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --container-max: 1280px;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-background text-text_primary font-inter;
+}
+
+.container-max {
+  max-width: var(--container-max);
+}
+
+/* RTL Support */
+[dir="rtl"] {
+  direction: rtl;
+}
+
+/* Spacing adjustments for RTL */
+[dir="rtl"] .space-x-4 > * + * {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+[dir="rtl"] .space-x-3 > * + * {
+  margin-left: 0;
+  margin-right: 0.75rem;
+}
+
+[dir="rtl"] .space-x-2 > * + * {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Text alignment for RTL */
+[dir="rtl"] .text-left {
+  text-align: right;
+}
+
+[dir="rtl"] .text-right {
+  text-align: left;
+}
+
+/* Padding adjustments for RTL */
+[dir="rtl"] .pl-4 {
+  padding-left: 0;
+  padding-right: 1rem;
+}
+
+[dir="rtl"] .pr-4 {
+  padding-left: 1rem;
+  padding-right: 0;
+}
+
+/* Margin adjustments for RTL */
+[dir="rtl"] .ml-2 {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+[dir="rtl"] .mr-2 {
+  margin-left: 0.5rem;
+  margin-right: 0;
+}
+
+[dir="rtl"] .ml-3 {
+  margin-left: 0;
+  margin-right: 0.75rem;
+}
+
+[dir="rtl"] .mr-3 {
+  margin-left: 0.75rem;
+  margin-right: 0;
+}
+
+/* Arabic font support */
+[dir="rtl"] body {
+  font-family: 'Segoe UI', 'Tahoma', 'Arial', 'Helvetica Neue', sans-serif;
+}
