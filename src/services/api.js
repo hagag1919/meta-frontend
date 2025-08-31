@@ -8,8 +8,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 30000, // 30 second timeout
-  withCredentials: false // Ensure no unexpected cookies/credentials
+  timeout: 30000,
+  withCredentials: false
 })
 
 api.interceptors.request.use((config) => {
