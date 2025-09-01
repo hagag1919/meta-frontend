@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/auth'
 import { usePermissions, ROLE_PERMISSIONS } from '../../utils/permissions.jsx'
 import NotificationBell from '../NotificationBell'
+import { useTranslation } from '../../utils/i18n.jsx'
 
 const navItem = 'flex items-center gap-3 px-3 py-2 rounded-lg text-text_secondary hover:bg-secondary hover:text-primary transition'
 const activeNav = 'bg-[#EEF2FF] text-primary font-medium'
@@ -10,6 +11,7 @@ export default function MainLayout() {
   const navigate = useNavigate()
   const { user, clear } = useAuthStore()
   const { routes, userRole, permissions } = usePermissions()
+  const { t } = useTranslation()
 
   const onLogout = () => {
     clear()
@@ -63,7 +65,7 @@ export default function MainLayout() {
                 className={({isActive}) => `${navItem} ${isActive ? activeNav : ''}`}
               >
                 <span className="text-lg">{route.icon}</span>
-                {route.label}
+                {route.labelKey ? t(route.labelKey) : route.label}
               </NavLink>
             ))}
           </nav>
@@ -84,12 +86,32 @@ export default function MainLayout() {
         </aside>
         <main className="flex-1 p-6">
           {/* Top Navigation Bar with Notifications */}
-          <div className="flex justify-end items-center mb-6">
+          <div className="flex justify-end items-center mb-6 gap-3">
+            {/* Quick language switcher */}
+            <LanguageSwitcher />
             <NotificationBell />
           </div>
           <Outlet />
         </main>
       </div>
+    </div>
+  )
+}
+
+function LanguageSwitcher() {
+  const { currentLanguage, changeLanguage } = useTranslation()
+  return (
+    <div className="flex items-center gap-1 text-sm">
+      <button
+        onClick={() => changeLanguage('en')}
+        className={`px-2 py-1 rounded ${currentLanguage === 'en' ? 'bg-gray-200' : ''}`}
+        title="English"
+      >🇺🇸 EN</button>
+      <button
+        onClick={() => changeLanguage('ar')}
+        className={`px-2 py-1 rounded ${currentLanguage === 'ar' ? 'bg-gray-200' : ''}`}
+        title="العربية"
+      >🇸🇦 AR</button>
     </div>
   )
 }

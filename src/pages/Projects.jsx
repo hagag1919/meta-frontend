@@ -709,8 +709,9 @@ export default function Projects(){
             <div className="border-t pt-6">
               <h4 className="text-lg font-medium text-gray-900 mb-4">Comments & Discussion</h4>
               <CommentSection
-                type="project"
-                itemId={showDetailModal.id}
+                entityType="project"
+                entityId={showDetailModal.id}
+                entityTitle={showDetailModal.name}
               />
             </div>
           </div>

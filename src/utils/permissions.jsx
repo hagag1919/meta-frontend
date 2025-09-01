@@ -4,17 +4,17 @@ export const ROLE_PERMISSIONS = {
   administrator: {
     name: 'Administrator',
     routes: [
-      { path: '/', label: 'Dashboard', icon: '📊' },
-      { path: '/projects', label: 'Projects', icon: '📁' },
-      { path: '/tasks', label: 'Tasks', icon: '✅' },
-      { path: '/users', label: 'Users', icon: '👥' },
-      { path: '/companies', label: 'Companies', icon: '🏢' },
-      { path: '/clients', label: 'Client Management', icon: '🤝' },
-      { path: '/invoices', label: 'Invoices', icon: '💰' },
-      { path: '/reports', label: 'Reports', icon: '📈' },
-      { path: '/time-tracking', label: 'Time Tracking', icon: '⏰' },
-      { path: '/settings', label: 'Settings', icon: '⚙️' },
-      { path: '/chat', label: 'Chat', icon: '💬' }
+      { path: '/', label: 'Dashboard', labelKey: 'dashboard', icon: '📊' },
+      { path: '/projects', label: 'Projects', labelKey: 'projects', icon: '📁' },
+      { path: '/tasks', label: 'Tasks', labelKey: 'tasks', icon: '✅' },
+      { path: '/users', label: 'Users', labelKey: 'users', icon: '👥' },
+      { path: '/companies', label: 'Companies', labelKey: 'companies', icon: '🏢' },
+      { path: '/clients', label: 'Client Management', labelKey: 'clients', icon: '🤝' },
+      { path: '/invoices', label: 'Invoices', labelKey: 'invoices', icon: '💰' },
+      { path: '/reports', label: 'Reports', labelKey: 'reports', icon: '📈' },
+      { path: '/time-tracking', label: 'Time Tracking', labelKey: 'timeTracking', icon: '⏰' },
+      { path: '/settings', label: 'Settings', labelKey: 'settings', icon: '⚙️' },
+      { path: '/chat', label: 'Chat', labelKey: 'chat', icon: '💬' }
     ],
     canCreate: ['projects', 'tasks', 'users', 'companies', 'clients', 'invoices'],
     canEdit: ['projects', 'tasks', 'users', 'companies', 'clients', 'invoices', 'settings'],
@@ -24,12 +24,12 @@ export const ROLE_PERMISSIONS = {
   developer: {
     name: 'Developer',
     routes: [
-      { path: '/', label: 'Dashboard', icon: '📊' },
-      { path: '/projects', label: 'My Projects', icon: '📁' },
-      { path: '/tasks', label: 'My Tasks', icon: '✅' },
-      { path: '/time-tracking', label: 'Time Tracking', icon: '⏰' },
-      { path: '/chat', label: 'Team Chat', icon: '💬' },
-      { path: '/profile', label: 'Profile', icon: '👤' }
+  { path: '/', label: 'Dashboard', labelKey: 'dashboard', icon: '📊' },
+  { path: '/projects', label: 'My Projects', labelKey: 'projects', icon: '📁' },
+  { path: '/tasks', label: 'My Tasks', labelKey: 'tasks', icon: '✅' },
+  { path: '/time-tracking', label: 'Time Tracking', labelKey: 'timeTracking', icon: '⏰' },
+  { path: '/chat', label: 'Team Chat', labelKey: 'chat', icon: '💬' },
+  { path: '/profile', label: 'Profile', labelKey: 'profile', icon: '👤' }
     ],
     canCreate: ['tasks', 'comments', 'time-entries'],
     canEdit: ['tasks', 'profile', 'comments', 'time-entries'],
@@ -39,12 +39,12 @@ export const ROLE_PERMISSIONS = {
   client: {
     name: 'Client',
     routes: [
-      { path: '/', label: 'Project Dashboard', icon: '📊' },
-      { path: '/projects', label: 'My Projects', icon: '📁' },
-      { path: '/invoices', label: 'Invoices', icon: '💰' },
-      { path: '/reports', label: 'Project Reports', icon: '📈' },
-      { path: '/chat', label: 'Support Chat', icon: '💬' },
-      { path: '/profile', label: 'Profile', icon: '👤' }
+  { path: '/', label: 'Project Dashboard', labelKey: 'dashboard', icon: '📊' },
+  { path: '/projects', label: 'My Projects', labelKey: 'projects', icon: '📁' },
+  { path: '/invoices', label: 'Invoices', labelKey: 'invoices', icon: '💰' },
+  { path: '/reports', label: 'Project Reports', labelKey: 'reports', icon: '📈' },
+  { path: '/chat', label: 'Support Chat', labelKey: 'chat', icon: '💬' },
+  { path: '/profile', label: 'Profile', labelKey: 'profile', icon: '👤' }
     ],
     canCreate: ['comments'],
     canEdit: ['profile'],

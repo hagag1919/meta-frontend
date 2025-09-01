@@ -1,7 +1,7 @@
 import axios from 'axios'
 import useAuthStore from '../store/auth'
 
-export const API_BASE = 'https://meta-backend-hqm9.onrender.com'
+export const API_BASE = 'https://meta-backend-hqm9.onrender.com' //! replace
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -454,7 +454,17 @@ export const getTasksByUser = async (userId) => (await api.get(`/api/tasks/user/
 
 // Comments
 export const createComment = async (payload) => (await api.post('/api/comments', payload)).data
-export const getCommentsByEntity = async (entityType, entityId) => (await api.get(`/api/comments/${entityType}/${entityId}`)).data
+export const getCommentsByEntity = async (entityType, entityId, options = {}) => {
+  // Backend expects query params: ?project_id=... or ?task_id=...
+  const params = {
+    ...(entityType === 'project' ? { project_id: entityId } : {}),
+    ...(entityType === 'task' ? { task_id: entityId } : {}),
+    ...(options.page ? { page: options.page } : {}),
+    ...(options.limit ? { limit: options.limit } : {})
+  }
+  const { data } = await api.get('/api/comments', { params })
+  return data
+}
 export const updateComment = async (id, payload) => (await api.put(`/api/comments/${id}`, payload)).data
 export const deleteComment = async (id) => (await api.delete(`/api/comments/${id}`)).data
 

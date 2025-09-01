@@ -267,9 +267,9 @@ export default function Settings() {
       <div className="bg-white rounded-xl border border-border shadow-soft">
         
         {/* General Settings Tab */}
-        {activeTab === 'general' && (
+    {activeTab === 'general' && (
           <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">General Settings</h2>
+      <h2 className="text-xl font-semibold mb-4">{t('generalSettings')}</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -471,7 +471,7 @@ export default function Settings() {
 
               {/* Color Preview */}
               <div>
-                <h3 className="text-lg font-medium mb-3">Preview</h3>
+                <h3 className="text-lg font-medium mb-3">{t('preview')}</h3>
                 <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
                   <div className="flex items-center space-x-4 mb-4">
                     <div 

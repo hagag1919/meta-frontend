@@ -255,8 +255,9 @@ export default function ClientProjectDetails({ project, onClose }) {
         <div className="border-t pt-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Project Discussion</h3>
           <CommentSection
-            type="project"
-            itemId={displayProject.id}
+            entityType="project"
+            entityId={displayProject.id}
+            entityTitle={displayProject.name}
           />
         </div>
       </div>

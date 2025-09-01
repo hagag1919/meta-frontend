@@ -4,6 +4,7 @@ import {
   getProjectReport, 
   getUserPerformanceReport, 
   getFinancialReport,
+  exportReport,
   listUsers,
   listProjects
 } from '../services/api'
@@ -91,13 +92,15 @@ export default function Reports() {
     }
   }, [activeTab, filters])
 
-  const handleExport = async () => {
-    // Temporarily disabled - export endpoint not implemented in backend
-    setError('Export functionality is currently not available. Please contact your administrator.')
-    return
-    
-    /* 
+  const handleExport = async (format = 'pdf') => {
     try {
+      setError('')
+      const supported = ['projects', 'financial']
+      if (!supported.includes(activeTab)) {
+        setError('Export not available for this report type')
+        return
+      }
+
       const payload = {
         type: activeTab,
         format,
@@ -108,12 +111,13 @@ export default function Reports() {
       const link = document.createElement('a')
       link.href = url
       link.download = `${activeTab}-report.${format}`
+      document.body.appendChild(link)
       link.click()
+      document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to export report')
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to export report')
     }
-    */
   }
 
   const formatCurrency = (amount) => {
@@ -242,13 +246,13 @@ export default function Reports() {
           )}
           <div className="flex items-end gap-2">
             <button
-              onClick={() => handleExport()}
+              onClick={() => handleExport('pdf')}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
             >
               Export PDF
             </button>
             <button
-              onClick={() => handleExport()}
+              onClick={() => setError('Excel export not available yet')}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
             >
               Export Excel
