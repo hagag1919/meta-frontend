@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { listUsers, updateUser, deleteUser, listCompanies } from '../services/api'
 import { PermissionGuard, usePermissions } from '../utils/permissions.jsx'
 
@@ -157,6 +158,14 @@ export default function Users(){
           <h1 className="text-3xl font-semibold text-text_primary">{getPageTitle()}</h1>
           <p className="text-text_secondary">{getPageSubtitle()}</p>
         </div>
+        {userRole === 'administrator' && (
+          <Link 
+            to="/admin-register" 
+            className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Create Admin Account
+          </Link>
+        )}
       </header>
 
       {error && (

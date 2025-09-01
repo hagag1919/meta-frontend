@@ -1,18 +1,102 @@
 import axios from 'axios'
 import useAuthStore from '../store/auth'
 
-export const API_BASE = 'https://meta-backend-hqm9.onrender.com' //! replace
+export const API_BASE = 'https://meta-backend-hqm9.onrender.com' // Updated to use Render deployment
+
+// Wake-up functionality for serverless backend
+let wakeUpPromise = null;
+let lastWakeUpTime = 0;
+const WAKE_UP_COOLDOWN = 5 * 60 * 1000; // 5 minutes cooldown between wake-ups
+
+const wakeUpBackend = async () => {
+  const now = Date.now();
+  
+  // Don't wake up if we've done it recently
+  if (now - lastWakeUpTime < WAKE_UP_COOLDOWN) {
+    console.log('⏰ Backend wake-up skipped (cooldown active)');
+    return wakeUpPromise;
+  }
+  
+  // If already waking up, return the existing promise
+  if (wakeUpPromise) {
+    console.log('⏰ Backend wake-up already in progress');
+    return wakeUpPromise;
+  }
+  
+  console.log('🚀 Waking up serverless backend...');
+  lastWakeUpTime = now;
+  
+  wakeUpPromise = (async () => {
+    const startTime = Date.now();
+    try {
+      // Call health check endpoint to wake up the server
+      const response = await axios.get(`${API_BASE}/api/health`, {
+        timeout: 45000, // Longer timeout for cold starts
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const duration = Date.now() - startTime;
+      console.log(`✅ Backend woke up successfully in ${duration}ms`);
+      console.log('Backend status:', response.data);
+      
+      return response.data;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.warn(`⚠️ Backend wake-up failed after ${duration}ms:`, error.message);
+      
+      // Reset wake-up time on failure so we can retry sooner
+      lastWakeUpTime = 0;
+      throw error;
+    } finally {
+      wakeUpPromise = null;
+    }
+  })();
+  
+  return wakeUpPromise;
+};
+
+// Auto wake-up on page load/reload
+if (typeof window !== 'undefined') {
+  // Wake up the backend when the app loads
+  window.addEventListener('load', () => {
+    wakeUpBackend().catch(() => {
+      console.log('Initial backend wake-up failed, will retry on first API call');
+    });
+  });
+  
+  // Also wake up on focus (when user returns to tab)
+  let isFirstFocus = true;
+  window.addEventListener('focus', () => {
+    if (!isFirstFocus) {
+      wakeUpBackend().catch(() => {
+        console.log('Focus-triggered backend wake-up failed');
+      });
+    }
+    isFirstFocus = false;
+  });
+}
 
 const api = axios.create({
   baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 30000,
+  timeout: 45000, // Increased timeout for serverless cold starts
   withCredentials: false
 })
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
+  // Try to wake up backend before making any request (except health checks)
+  if (!config.url?.includes('/health')) {
+    try {
+      await wakeUpBackend();
+    } catch (error) {
+      console.warn('Backend wake-up failed, proceeding with request:', error.message);
+    }
+  }
+  
   const isAuthEndpoint = config?.url?.startsWith('/auth')
   const token = useAuthStore.getState().token
   
@@ -53,13 +137,31 @@ api.interceptors.response.use(
     })
     return response
   },
-  (err) => {
+  async (err) => {
     console.log('Response interceptor - Error:', {
       url: err.config?.url,
       status: err.response?.status,
       data: err.response?.data,
       message: err.message
     })
+    
+    // Handle serverless timeout/connection issues
+    if (err.code === 'ECONNABORTED' || err.message?.includes('timeout') || 
+        err.response?.status === 502 || err.response?.status === 503) {
+      console.log('🔄 Detected serverless backend issue, attempting wake-up...');
+      
+      try {
+        // Force wake-up by resetting cooldown
+        lastWakeUpTime = 0;
+        await wakeUpBackend();
+        
+        // Retry the original request once
+        console.log('🔄 Retrying original request after wake-up...');
+        return api.request(err.config);
+      } catch (wakeUpError) {
+        console.error('❌ Wake-up and retry failed:', wakeUpError.message);
+      }
+    }
     
     // Handle security middleware errors specifically
     if (err.response?.status === 400 && 
@@ -121,36 +223,69 @@ export const testSecurityPatterns = async () => {
   }
 }
 
-// Health check
+// Health check function (used for wake-up)
 export const healthCheck = async () => {
   try {
-    const { data } = await api.get('/health')
-    return data
+    console.log('🔍 Checking backend health...');
+    const { data } = await axios.get(`${API_BASE}/api/health`, {
+      timeout: 45000, // Long timeout for cold starts
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    console.log('✅ Health check successful:', data);
+    return data;
   } catch (error) {
-    console.error('Health check failed:', error)
+    console.error('❌ Health check failed:', error.message);
     
     // If CORS or security issues, try a simple fetch
     if (error.message === 'Network Error' || 
         error.response?.status === 400) {
       try {
-        const response = await fetch(`${API_BASE}/health`, {
+        console.log('🔄 Retrying health check with fetch...');
+        const response = await fetch(`${API_BASE}/api/health`, {
           method: 'GET',
           mode: 'cors',
           credentials: 'omit'
-        })
+        });
         if (response.ok) {
-          return await response.json()
+          const data = await response.json();
+          console.log('✅ Fetch health check successful:', data);
+          return data;
         }
-        throw new Error(`HTTP ${response.status}`)
+        throw new Error(`HTTP ${response.status}`);
       } catch (fetchError) {
-        console.error('Fetch health check also failed:', fetchError)
-        throw fetchError
+        console.error('❌ Fetch health check also failed:', fetchError.message);
+        throw fetchError;
       }
     }
-    
-    throw error
+    throw error;
   }
-}
+};
+
+// Manual wake-up function for user-triggered wake-ups
+export const wakeUpBackendManual = async () => {
+  console.log('🚀 Manual backend wake-up requested...');
+  
+  // Reset cooldown to allow immediate wake-up
+  lastWakeUpTime = 0;
+  
+  try {
+    const result = await wakeUpBackend();
+    console.log('✅ Manual wake-up completed successfully');
+    return result;
+  } catch (error) {
+    console.error('❌ Manual wake-up failed:', error.message);
+    throw error;
+  }
+};
+
+// Check if backend is likely sleeping (for UI indicators)
+export const isBackendLikelySleeping = () => {
+  const timeSinceLastWakeup = Date.now() - lastWakeUpTime;
+  const SLEEP_THRESHOLD = 10 * 60 * 1000; // 10 minutes
+  return timeSinceLastWakeup > SLEEP_THRESHOLD;
+};
 
 // Enhanced login with retry logic
 export const login = async (email, password) => {
@@ -175,15 +310,78 @@ export const login = async (email, password) => {
   }
 };
 
+export const registerRequest = async (payload) => {
+  const body = {
+    first_name: payload.firstName ?? payload.first_name ?? payload.name?.split(' ')?.[0],
+    last_name: payload.lastName ?? payload.last_name ?? payload.name?.split(' ')?.slice(1).join(' '),
+    email: payload.email,
+    role: payload.role ?? 'developer',
+    ...(payload.phone && { phone: payload.phone }),
+  }
+  
+  // Clean the data to avoid security middleware issues
+  const cleanBody = {
+    first_name: body.first_name?.trim()?.replace(/[^a-zA-Z\s]/g, ''),
+    last_name: body.last_name?.trim()?.replace(/[^a-zA-Z\s]/g, ''),
+    email: body.email?.trim()?.toLowerCase(),
+    role: body.role
+  }
+  
+  console.log('Register request body:', cleanBody)
+  
+  try {
+    const { data } = await api.post('/api/auth/register-request', cleanBody)
+    console.log('Register request response:', data)
+    return data
+  } catch (error) {
+    console.log('Register request error details:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    })
+    
+    // If security middleware blocks it, try with ultra-clean data
+    if (error.response?.status === 400 && 
+        error.response?.data?.error === 'Invalid input detected') {
+      console.log('Retrying registration request with ultra-clean data...')
+      
+      const ultraCleanBody = {
+        first_name: cleanBody.first_name?.replace(/[^a-zA-Z]/g, ''),
+        last_name: cleanBody.last_name?.replace(/[^a-zA-Z]/g, ''),
+        email: cleanBody.email?.replace(/[^a-zA-Z0-9@._-]/g, ''),
+        role: cleanBody.role
+      }
+      
+      console.log('Ultra-clean register request attempt:', ultraCleanBody)
+      
+      try {
+        const { data } = await axios.post(`${API_BASE}/api/auth/register-request`, 
+          ultraCleanBody,
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 30000,
+            withCredentials: false
+          }
+        )
+        console.log('Register request retry successful:', data)
+        return data
+      } catch (retryError) {
+        console.error('Register request retry failed:', retryError)
+        throw retryError
+      }
+    }
+    throw error
+  }
+}
+
 export const register = async (payload) => {
-  // Backend expects: first_name, last_name, email, password, role, phone (optional)
   const body = {
     first_name: payload.firstName ?? payload.first_name ?? payload.name?.split(' ')?.[0],
     last_name: payload.lastName ?? payload.last_name ?? payload.name?.split(' ')?.slice(1).join(' '),
     email: payload.email,
     password: payload.password,
-    role: payload.role ?? 'developer', // Default to 'developer' if not specified
-    ...(payload.phone && { phone: payload.phone }), // Only include phone if provided
+    role: payload.role ?? 'developer',
+    ...(payload.phone && { phone: payload.phone }),
   }
   
   // Clean the data to avoid security middleware issues
@@ -198,7 +396,7 @@ export const register = async (payload) => {
   console.log('Register request body:', { ...cleanBody, password: '***' })
   
   try {
-    const { data } = await api.post('/api/auth/register', cleanBody)
+    const { data } = await api.post('/api/auth/register-admin', cleanBody)
     console.log('Register response:', { ...data, token: '***' })
     return data
   } catch (error) {
@@ -224,7 +422,7 @@ export const register = async (payload) => {
       console.log('Ultra-clean register attempt:', { ...ultraCleanBody, password: '***' })
       
       try {
-        const { data } = await axios.post(`${API_BASE}/api/auth/register`, 
+        const { data } = await axios.post(`${API_BASE}/api/auth/register-admin`, 
           ultraCleanBody,
           {
             headers: { 'Content-Type': 'application/json' },
