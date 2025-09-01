@@ -1,7 +1,7 @@
 import axios from 'axios'
 import useAuthStore from '../store/auth'
 
-export const API_BASE = 'https://meta-backend-hqm9.onrender.com' // Updated to use Render deployment
+export const API_BASE = 'https://meta-backend-hqm9.onrender.com' // Updated to use correct port
 
 // Wake-up functionality for serverless backend
 let wakeUpPromise = null;
@@ -740,7 +740,52 @@ export const getTimeReport = async (params) => (await api.get('/api/reports/prod
 export const getProjectReport = async (params) => (await api.get('/api/reports/projects', { params })).data
 export const getUserPerformanceReport = async (userId, params) => (await api.get('/api/reports/tasks', { params: { ...params, developer_id: userId } })).data
 export const getFinancialReport = async (params) => (await api.get('/api/reports/financial', { params })).data
-export const exportReport = async (payload) => (await api.post('/api/reports/export', payload, { responseType: 'blob' })).data
+// Normalize and sanitize export payload to match backend expectations
+const buildExportPayload = (payload = {}) => {
+  const allowedTypes = ['projects', 'financial', 'time', 'users']
+  const type = allowedTypes.includes(payload.type) ? payload.type : 'projects'
+
+  const onlyDate = (v) => {
+    if (!v) return undefined
+    const s = String(v).slice(0, 10)
+    return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : undefined
+  }
+
+  const out = {
+    type,
+    format: 'pdf', // backend only supports PDF
+    // dates (support both camelCase and snake_case inputs)
+    start_date: onlyDate(payload.start_date || payload.startDate),
+    end_date: onlyDate(payload.end_date || payload.endDate),
+    // common filters
+    company_id: payload.company_id ?? undefined,
+    project_id: payload.project_id ?? payload.projectId ?? undefined,
+    user_id: payload.user_id ?? payload.userId ?? undefined,
+    manager_id: payload.manager_id ?? undefined,
+    status: payload.status ?? undefined,
+    period: payload.period ?? undefined
+  }
+
+  // Remove undefined keys
+  Object.keys(out).forEach((k) => out[k] === undefined && delete out[k])
+  return out
+}
+
+export const exportReport = async (payload = {}) => {
+  const body = buildExportPayload(payload)
+  try {
+    const res = await api.post('/api/reports/export', body, {
+      responseType: 'blob',
+      headers: { Accept: 'application/pdf' }
+    })
+    return res.data
+  } catch (error) {
+    // Surface clearer message for common 400s
+    const msg = error.response?.data?.error || error.message
+    console.warn('Export report failed:', msg, { status: error.response?.status, body })
+    throw error
+  }
+}
 
 // Settings
 export const getSettings = async () => (await api.get('/api/settings')).data

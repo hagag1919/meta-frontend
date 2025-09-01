@@ -95,7 +95,7 @@ export default function Reports() {
   const handleExport = async (format = 'pdf') => {
     try {
       setError('')
-      const supported = ['projects', 'financial']
+      const supported = ['projects', 'financial', 'time', 'users']
       if (!supported.includes(activeTab)) {
         setError('Export not available for this report type')
         return
@@ -110,7 +110,7 @@ export default function Reports() {
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `${activeTab}-report.${format}`
+      link.download = `${activeTab}-report.pdf`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -250,12 +250,6 @@ export default function Reports() {
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
             >
               Export PDF
-            </button>
-            <button
-              onClick={() => setError('Excel export not available yet')}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-            >
-              Export Excel
             </button>
           </div>
         </div>
