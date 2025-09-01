@@ -57,7 +57,9 @@ const wakeUpBackend = async () => {
   return wakeUpPromise;
 };
 
-// Auto wake-up on page load/reload
+// Auto wake-up on page load/reload - DISABLED
+// Commented out to prevent automatic backend wake-up
+/*
 if (typeof window !== 'undefined') {
   // Wake up the backend when the app loads
   window.addEventListener('load', () => {
@@ -77,6 +79,7 @@ if (typeof window !== 'undefined') {
     isFirstFocus = false;
   });
 }
+*/
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -88,7 +91,9 @@ const api = axios.create({
 })
 
 api.interceptors.request.use(async (config) => {
-  // Try to wake up backend before making any request (except health checks)
+  // Auto wake-up disabled - no longer waking up backend before requests
+  // Try to wake up backend before making any request (except health checks) - DISABLED
+  /*
   if (!config.url?.includes('/health')) {
     try {
       await wakeUpBackend();
@@ -96,6 +101,7 @@ api.interceptors.request.use(async (config) => {
       console.warn('Backend wake-up failed, proceeding with request:', error.message);
     }
   }
+  */
   
   const isAuthEndpoint = config?.url?.startsWith('/auth')
   const token = useAuthStore.getState().token
