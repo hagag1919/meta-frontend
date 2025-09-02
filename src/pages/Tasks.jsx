@@ -59,9 +59,11 @@ export default function Tasks() {
   const loadUsers = async () => {
     try {
       const data = await listUsers()
-      setUsers(Array.isArray(data?.users) ? data.users : [])
+      console.log('Loaded users:', data) // Debug log
+      setUsers(Array.isArray(data?.users) ? data.users : Array.isArray(data) ? data : [])
     } catch (err) {
       console.warn('Failed to load users:', err)
+      setUsers([]) // Ensure users is always an array
     }
   }
 

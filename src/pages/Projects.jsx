@@ -40,13 +40,10 @@ export default function Projects(){
       const data = await listCompanies()
       const companiesList = data.companies || (data.company ? [data.company] : [])
       setCompanies(Array.isArray(companiesList) ? companiesList : [])
-      if (companiesList.length > 0 && !formData.company_id) {
-        setFormData(prev => ({ ...prev, company_id: companiesList[0].id }))
-      }
     } catch (e) {
       console.error('Failed to load companies:', e)
     }
-  }, [formData.company_id])
+  }, [])
 
   const loadUsers = useCallback(async () => {
     try {
@@ -74,6 +71,13 @@ export default function Projects(){
     loadCompanies()
     loadUsers()
   }, [load, loadCompanies, loadUsers])
+
+  // Handle initial company selection when companies load
+  useEffect(() => {
+    if (companies.length > 0 && !formData.company_id) {
+      setFormData(prev => ({ ...prev, company_id: companies[0].id }))
+    }
+  }, [companies, formData.company_id])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

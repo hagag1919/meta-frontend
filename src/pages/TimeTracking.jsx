@@ -35,7 +35,8 @@ export default function TimeTracking() {
     try {
       setLoading(true)
       const data = await getTimeEntries()
-      setTimeEntries(Array.isArray(data?.timeEntries) ? data.timeEntries : Array.isArray(data) ? data : [])
+      console.log('Time entries data:', data) // Debug log
+      setTimeEntries(Array.isArray(data?.time_entries) ? data.time_entries : Array.isArray(data) ? data : [])
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load time entries')
     } finally {

@@ -2,7 +2,16 @@ import { useEffect, useState } from 'react'
 import { 
   listInvoices, 
   createInvoice, 
-  updateInvoice, 
+  const handleEdit = (invoice) => {
+    setEditingInvoice(invoice)
+    setFormData({
+      projectId: invoice.projectId || invoice.project_id || '',
+      dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : invoice.due_date ? invoice.due_date.split('T')[0] : '',
+      taxAmount: invoice.taxAmount || invoice.tax_amount || '',
+      notes: invoice.notes || ''
+    })
+    setShowForm(true)
+  }e, 
   deleteInvoice, 
   generateInvoicePDF,
   listProjects 
@@ -53,11 +62,6 @@ export default function Invoices() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      if (!formData.projectId) {
-        setError('Please select a project')
-        return
-      }
-
       const payload = {
         project_id: formData.projectId,
         issue_date: new Date().toISOString().split('T')[0], // Today's date
@@ -95,16 +99,20 @@ export default function Invoices() {
   const handleEdit = (invoice) => {
     setEditingInvoice(invoice)
     setFormData({
-      projectId: invoice.project_id || '',
-      dueDate: invoice.due_date ? invoice.due_date.split('T')[0] : '',
-      taxAmount: invoice.tax_rate || '',
-      notes: invoice.notes || ''
+      clientId: invoice.clientId || invoice.client_id || '',
+      projectId: invoice.projectId || invoice.project_id || '',
+      invoiceNumber: invoice.invoiceNumber || invoice.invoice_number || '',
+      amount: invoice.amount || '',
+      taxAmount: invoice.taxAmount || invoice.tax_amount || '',
+      dueDate: invoice.dueDate ? invoice.dueDate.split('T')[0] : '',
+      status: invoice.status || 'draft',
+      items: invoice.items || [{ description: '', quantity: 1, rate: 0, amount: 0 }]
     })
     setShowForm(true)
   }
 
   const handleDelete = async (invoice) => {
-    if (window.confirm(`Are you sure you want to delete invoice ${invoice.invoice_number}?`)) {
+    if (window.confirm(`Are you sure you want to delete invoice ${invoice.invoiceNumber || invoice.invoice_number}?`)) {
       try {
         await deleteInvoice(invoice.id)
         loadInvoices()
@@ -120,7 +128,7 @@ export default function Invoices() {
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = `invoice-${invoice.invoice_number}.pdf`
+      link.download = `invoice-${invoice.invoiceNumber || invoice.invoice_number}.pdf`
       link.click()
       window.URL.revokeObjectURL(url)
     } catch (err) {
@@ -132,7 +140,7 @@ export default function Invoices() {
     switch (status) {
       case 'paid':
         return 'bg-green-100 text-green-800'
-      case 'pending':
+      case 'sent':
         return 'bg-blue-100 text-blue-800'
       case 'overdue':
         return 'bg-red-100 text-red-800'
@@ -201,25 +209,19 @@ export default function Invoices() {
               {editingInvoice ? 'Edit Invoice' : 'Create New Invoice'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Project *
-                </label>
-                <select
-                  value={formData.projectId}
-                  onChange={(e) => setFormData({ ...formData, projectId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                >
-                  <option value="">Select Project</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Invoice Number *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.invoiceNumber}
+                    onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Due Date *
@@ -232,9 +234,24 @@ export default function Invoices() {
                     required
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tax Rate (%)
+                    Amount *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tax Amount
                   </label>
                   <input
                     type="number"
@@ -247,22 +264,25 @@ export default function Invoices() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
+                  Status
                 </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                  rows={3}
-                  placeholder="Additional notes for the invoice"
-                />
+                >
+                  <option value="draft">Draft</option>
+                  <option value="sent">Sent</option>
+                  <option value="paid">Paid</option>
+                  <option value="overdue">Overdue</option>
+                </select>
               </div>
               <div className="flex gap-2 pt-4">
                 <button
                   type="submit"
                   className="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-primary/90 transition"
                 >
-                  {editingInvoice ? 'Update' : 'Create'} Invoice
+                  {editingInvoice ? 'Update' : 'Create'}
                 </button>
                 <button
                   type="button"
@@ -287,7 +307,6 @@ export default function Invoices() {
           <thead className="bg-gray-50 border-b border-border">
             <tr>
               <th className="text-left py-3 px-4 font-medium text-gray-700">Invoice #</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-700">Project</th>
               <th className="text-left py-3 px-4 font-medium text-gray-700">Amount</th>
               <th className="text-left py-3 px-4 font-medium text-gray-700">Due Date</th>
               <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
@@ -297,24 +316,23 @@ export default function Invoices() {
           <tbody>
             {invoices.length === 0 ? (
               <tr>
-                <td colSpan="6" className="text-center py-8 text-gray-500">
-                  No invoices found. Create your first invoice to get started.
+                <td colSpan="5" className="text-center py-8 text-gray-500">
+                  No invoices found.
                 </td>
               </tr>
             ) : (
               invoices.map((invoice) => (
                 <tr key={invoice.id} className="border-b border-border hover:bg-gray-50">
                   <td className="py-3 px-4">
-                    <div className="font-medium text-gray-900">{invoice.invoice_number}</div>
+                    <div className="font-medium text-gray-900">
+                      {invoice.invoiceNumber || invoice.invoice_number}
+                    </div>
                   </td>
                   <td className="py-3 px-4 text-gray-600">
-                    {invoice.project_name || 'Unknown Project'}
+                    {formatCurrency(invoice.amount)}
                   </td>
                   <td className="py-3 px-4 text-gray-600">
-                    {formatCurrency(invoice.total_amount)}
-                  </td>
-                  <td className="py-3 px-4 text-gray-600">
-                    {formatDate(invoice.due_date)}
+                    {formatDate(invoice.dueDate || invoice.due_date)}
                   </td>
                   <td className="py-3 px-4">
                     <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>

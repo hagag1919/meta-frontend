@@ -511,23 +511,29 @@ export const updateMilestone = async (projectId, milestoneId, payload) => (await
 export const deleteMilestone = async (projectId, milestoneId) => (await api.delete(`/api/projects/${projectId}/milestones/${milestoneId}`)).data
 
 // Companies
-export const listCompanies = async () => {
+export const listCompanies = async (filters = {}) => {
   try {
     // First get current user to know their role
     const { user } = await getCurrentUser()
     
     if (user.role === 'administrator') {
-      // Administrators can get all companies via settings endpoint
-      const { data } = await api.get('/api/settings/company')
-      return data
+      // Administrators can get all companies via companies endpoint
+      try {
+        const { data } = await api.get('/api/companies')
+        return data
+      } catch {
+        // Fallback to clients endpoint
+        const { data } = await api.get('/api/clients')
+        return data
+      }
     } else if (user.role === 'developer') {
       // Developers can access clients endpoint
       try {
         const { data } = await api.get('/api/clients')
         return data
       } catch {
-        // Fallback to settings endpoint for developers
-        const { data } = await api.get('/api/settings/company')
+        // Fallback to companies endpoint for developers
+        const { data } = await api.get('/api/companies')
         return data
       }
     } else if (user.role === 'client') {
@@ -551,23 +557,27 @@ export const createCompany = async (payload) => {
     phone: payload.phone || null,
     website: payload.website || null,
     address: payload.address || null,
+    contact_person: payload.contact_person || payload.contactPerson || null,
+    notes: payload.notes || null,
+    is_active: payload.is_active !== undefined ? payload.is_active : true
   }
   return (await api.post('/api/companies', body)).data
 }
 export const updateCompany = async (id, payload) => {
   const body = {
-    ...(payload.name && { name: payload.name }),
-    ...(payload.email && { email: payload.email }),
-    ...(payload.phone && { phone: payload.phone }),
-    ...(payload.website && { website: payload.website }),
-    ...(payload.address && { address: payload.address }),
-    ...(payload.contact_person && { contact_person: payload.contact_person }),
-    ...(payload.contactPerson && { contact_person: payload.contactPerson }),
-    ...(payload.notes && { notes: payload.notes }),
+    ...(payload.name !== undefined && { name: payload.name }),
+    ...(payload.email !== undefined && { email: payload.email }),
+    ...(payload.phone !== undefined && { phone: payload.phone }),
+    ...(payload.website !== undefined && { website: payload.website }),
+    ...(payload.address !== undefined && { address: payload.address }),
+    ...(payload.contact_person !== undefined && { contact_person: payload.contact_person }),
+    ...(payload.contactPerson !== undefined && { contact_person: payload.contactPerson }),
+    ...(payload.notes !== undefined && { notes: payload.notes }),
+    ...(payload.is_active !== undefined && { is_active: payload.is_active })
   }
-  return (await api.put(`/api/clients/${id}`, body)).data
+  return (await api.put(`/api/companies/${id}`, body)).data
 }
-export const deleteCompany = async (id) => (await api.delete(`/api/clients/${id}`)).data
+export const deleteCompany = async (id) => (await api.delete(`/api/companies/${id}`)).data
 
 // Tasks
 export const listTasks = async (params = {}) => {
@@ -726,9 +736,9 @@ export const downloadFile = async (id) => (await api.get(`/api/files/download/${
 export const deleteFile = async (id) => (await api.delete(`/api/files/${id}`)).data
 
 // Time Tracking
-export const startTimeEntry = async (payload) => (await api.post('/api/time/start', payload)).data
+export const startTimeEntry = async (payload) => (await api.post('/api/time', payload)).data
 export const stopTimeEntry = async (payload) => (await api.post('/api/time/stop', payload)).data
-export const getTimeEntries = async (params) => (await api.get('/api/time/entries', { params })).data
+export const getTimeEntries = async (params) => (await api.get('/api/time', { params })).data
 export const getTimeEntriesByTask = async (taskId) => (await api.get(`/api/time/task/${taskId}`)).data
 export const updateTimeEntry = async (id, payload) => (await api.put(`/api/time/${id}`, payload)).data
 export const deleteTimeEntry = async (id) => (await api.delete(`/api/time/${id}`)).data
